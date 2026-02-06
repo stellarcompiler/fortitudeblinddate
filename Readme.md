@@ -1,8 +1,8 @@
 # WorkFlow
-* Authentication
+* Authentication</br>
 Every user has to be authenticated 
 
-* Interest/Preference
+* Interest/Preference</br>
 We are gonna take the preferences and interests of the person , the interests will be used for matching and the preferences will be used to finalise them . 
 
 * Waiting Area
