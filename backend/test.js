@@ -1,5 +1,5 @@
-import findMatches from "./matchmaking-worker.js";
-import calculateCompatibilityScore from "./matchmaking-worker.js"
+import findMatches from "./matchmaking/matchmaking-worker.js";
+import calculateCompatibilityScore from "./matchmaking/matchmaking-worker.js"
 
 const testUsers = [
     {
