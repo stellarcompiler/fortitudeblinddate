@@ -41,9 +41,9 @@ const checkPreferenceMatch = (user1, user2) => {
   const age1 = user1.age;
   const age2 = user2.age;
 
-  if (user1.age_preference === "elder" && age2 <= age1) return false;
+  if (user1.age_preference === "older" && age2 <= age1) return false;
   if (user1.age_preference === "younger" && age2 >= age1) return false;
-  if (user2.age_preference === "elder" && age1 <= age2) return false;
+  if (user2.age_preference === "older" && age1 <= age2) return false;
   if (user2.age_preference === "younger" && age1 >= age2) return false;
 
   return true;
