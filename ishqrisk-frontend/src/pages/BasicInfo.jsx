@@ -29,21 +29,22 @@ export default function BasicInfo() {
     nickname: "",
     gender: "",
     phoneno: "",
+    year: ""
   });
 
   // ⭐ Autofill name from OAuth
   useEffect(() => {
-  if (!user?.user_metadata?.full_name) return;
+    if (!user?.user_metadata?.full_name) return;
 
-  const parts = user.user_metadata.full_name.split(" ");
+    const parts = user.user_metadata.full_name.split(" ");
 
-  setForm((prev) => ({
-    ...prev,
-    firstName: parts[0] || "",
-    lastName: parts.slice(1).join(" ") || "",
-    nickname: autoNickname || "",
-  }));
-}, [user, autoNickname]);
+    setForm((prev) => ({
+      ...prev,
+      firstName: parts[0] || "",
+      lastName: parts.slice(1).join(" ") || "",
+      nickname: autoNickname || "",
+    }));
+  }, [user, autoNickname]);
 
 
 
@@ -86,8 +87,9 @@ export default function BasicInfo() {
           phoneno: form.phoneno,
           email: user.email,
           reveal_theme: selectedTemplate,
-          profile_url: profileUrl?? undefined,
+          profile_url: profileUrl ?? undefined,
           onboarding_step: "preferences",
+          year: form.year
         })
 
         .select();
@@ -176,6 +178,22 @@ export default function BasicInfo() {
           <Input label="Phone Number" value={form.phoneno}
             onChange={(e) => setForm({ ...form, phoneno: e.target.value })}
           />
+          {/* Year Select */}
+          <select
+            value={form.year}
+            onChange={(e) => setForm({ ...form, year: e.target.value })}
+            className="rounded-xl border border-white/10 bg-white/5 text-white px-4 py-3 text-sm outline-none backdrop-blur-md focus:border-primary"
+          >
+            <option value="" disabled className="bg-[#0c111f] text-white">
+              Select Year
+            </option>
+            <option value="1st year" className="bg-[#0c111f] text-white">1st Year</option>
+            <option value="2nd year" className="bg-[#0c111f] text-white">2nd Year</option>
+            <option value="3rd year" className="bg-[#0c111f] text-white">3rd Year</option>
+            <option value="4th year" className="bg-[#0c111f] text-white">4th Year</option>
+          </select>
+
+
         </div>
 
         {/* TEMPLATE SELECT */}

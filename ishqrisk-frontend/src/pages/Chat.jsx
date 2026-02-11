@@ -1,73 +1,266 @@
 import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "../lib/supabase";
+import { useSession } from "../context/SessionContext";
+import { useAuth } from "../context/AuthContext";
 
 export default function Chat() {
-  const currentUserId = "user_123";
-  const {session} = {id:"randomId1₹223345", user_a:"ranfomuserId", user_b:"randomuserId2", nickname_a:"randomNickName1", nickname_b:"randomNikname2"}; // ⭐ MOCK SESSION (Replace with useAuth().user.id in real app) 
+  const navigate = useNavigate();
 
-  const [messages, setMessages] = useState([
-    { id: 1, senderId: "user_456", text: "Hey." },
-    { id: 2, senderId: "user_123", text: "Hi 🙂" },
-    { id: 3, senderId: "user_456", text: "This feels… different." },
-  ]);
+
+  const { session } = useSession();
+  const { user, profile } = useAuth();
+  const typingChannelRef = useRef(null);
+
+  const [localMessageCount, setLocalMessageCount] = useState(0);
+
+
+
+  console.log(profile)
+  const [loadingMessages, setLoadingMessages] = useState(true);
+
+
+  const [messages, setMessages] = useState([]);
+  const MAX_MESSAGES = 100;
+
+
+
+
+  const messagesLeft =
+    localMessageCount != null
+      ? Math.max(MAX_MESSAGES - localMessageCount, 0)
+      : null;
+
+
+
+
+  useEffect(() => {
+    if (!session?.id) return;
+
+    const channel = supabase
+      .channel(`session-update-${session.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "sessions",
+          filter: `id=eq.${session.id}`,
+        },
+        (payload) => {
+          setLocalMessageCount(payload.new.message_count);
+        }
+      )
+      .subscribe();
+
+    return () => supabase.removeChannel(channel);
+  }, [session?.id]);
+
+
+  useEffect(() => {
+    if (session?.message_count != null) {
+      setLocalMessageCount(session.message_count);
+    }
+  }, [session?.message_count]);
+
+  useEffect(() => {
+    if (!session) return;
+
+    const channel = supabase
+      .channel("messages-realtime")
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "messages",
+          filter: `session_id=eq.${session.id}`,
+        },
+        (payload) => {
+          const msg = payload.new;
+
+          // ⭐ IMPORTANT: Ignore own messages
+          if (msg.sender_id === user.id) return;
+
+          setMessages(prev => [
+            ...prev,
+            {
+              id: msg.id,
+              sender: "other",
+              text: msg.text,
+            },
+          ]);
+        }
+      )
+      .subscribe();
+
+    return () => supabase.removeChannel(channel);
+  }, [session?.id, user?.id]);
+
 
   const [input, setInput] = useState("");
-  const [isTyping, setIsTyping] = useState(true);
+  const [isTyping, setIsTyping] = useState(false);
+
+  useEffect(() => {
+    if (!session || !user) return;
+
+    const loadMessages = async () => {
+      const { data, error } = await supabase
+        .from("messages")
+        .select("*")
+        .eq("session_id", session.id)
+        .order("created_at", { ascending: true });
+
+      if (error) {
+        console.error("Failed loading messages:", error);
+        setLoadingMessages(false);
+        return;
+      }
+
+
+      const formatted = data.map((msg) => ({
+        id: msg.id,
+        sender: msg.sender_id === user.id ? "me" : "other",
+        text: msg.text,
+      }));
+
+      setMessages(formatted);
+      setLoadingMessages(false);
+
+    };
+
+    loadMessages();
+  }, [session?.id, user?.id]);
+
+  useEffect(() => {
+    if (!session || !user) return;
+
+    typingChannelRef.current = supabase.channel(`typing-${session.id}`);
+
+    typingChannelRef.current
+      .on("broadcast", { event: "typing" }, ({ payload }) => {
+        if (payload.sender_id === user.id) return;
+
+        setIsTyping(payload.isTyping);
+
+        if (payload.isTyping) {
+          setTimeout(() => setIsTyping(false), 2000);
+        }
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(typingChannelRef.current);
+    };
+  }, [session?.id, user?.id]);
+
+
   const bottomRef = useRef(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isTyping]);
 
-  const sendMessage = () => {
-    if (!input.trim()) return;
 
+
+
+  const sendMessage = async () => {
+    if (!input.trim() || !session) return;
+
+    const newMessage = {
+      session_id: session.id,
+      sender_id: user.id,
+      text: input,
+    };
+
+    // ⭐ Update UI instantly (optimistic update)
     setMessages((prev) => [
       ...prev,
-      { id: Date.now(), senderId: currentUserId, text: input },
+      {
+
+        sender: "me",
+        text: input,
+      },
     ]);
 
     setInput("");
-    setTimeout(() => setIsTyping(true), 500);
-    setTimeout(() => {
-      setIsTyping(false);
-      setMessages((prev) => [
-        ...prev,
-        { id: Date.now() + 1, senderId: "user_456", text: "Yeah… I was thinking the same." },
-      ]);
-    }, 2000);
+
+    // ⭐ Insert ONLY this message
+    const { error } = await supabase
+      .from("messages")
+      .insert(newMessage);
+
+    if (error) {
+      console.error("Message insert error:", error);
+    }
   };
+  if (loadingMessages) {
+    return (
+      <div className="h-screen w-full flex items-center justify-center bg-[#0c111f] overflow-hidden">
+
+        {/* Nebula glow */}
+        <div className="absolute inset-0 -z-10">
+          <div className="absolute -top-1/4 -left-1/4 w-[80%] h-[80%] rounded-full opacity-40 blur-[120px]"
+            style={{ background: "radial-gradient(circle, #512f5c 0%, transparent 70%)" }}
+          />
+          <div className="absolute -bottom-1/4 left-[5%] w-[70%] h-[70%] rounded-full opacity-30 blur-[100px] animate-pulse"
+            style={{ background: "radial-gradient(circle, #ed9e6f 0%, transparent 60%)", animationDuration: "10s" }}
+          />
+        </div>
+
+        {/* Loader */}
+        <div className="flex flex-col items-center gap-6">
+
+          {/* typing-style bubbles */}
+          <div className="flex gap-2">
+            <span className="w-3 h-3 bg-[#ed9e6f] rounded-full animate-bounce" />
+            <span className="w-3 h-3 bg-[#b66570] rounded-full animate-bounce [animation-delay:0.2s]" />
+            <span className="w-3 h-3 bg-[#80466e] rounded-full animate-bounce [animation-delay:0.4s]" />
+          </div>
+
+          {/* Text */}
+          <p className="text-[#ed9e6f] font-mono tracking-widest text-xs uppercase animate-pulse">
+            ✦ Connecting souls...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+
 
   return (
+
     <div className="relative h-screen w-full text-white flex flex-col overflow-hidden bg-[#0c111f]">
 
       {/* 🌌 CSS NEBULA GENERATOR (Replaces the Image Holder) */}
       <div className="absolute inset-0 -z-10 overflow-hidden pointer-events-none">
         {/* Deep Midnight Base */}
         <div className="absolute inset-0 bg-[#0c111f]" />
-        
+
         {/* Large Plum Nebula (Top Left) */}
-        <div 
+        <div
           className="absolute -top-1/4 -left-1/4 w-[80%] h-[80%] rounded-full opacity-40 blur-[120px]"
           style={{ background: 'radial-gradient(circle, #512f5c 0%, transparent 70%)' }}
         />
-        
+
         {/* Golden Amber Glow (Bottom Center/Left) */}
-        <div 
+        <div
           className="absolute -bottom-1/4 left-[5%] w-[70%] h-[70%] rounded-full opacity-30 blur-[100px] animate-pulse"
-          style={{ 
+          style={{
             background: 'radial-gradient(circle, #ed9e6f 0%, transparent 60%)',
-            animationDuration: '10s' 
+            animationDuration: '10s'
           }}
         />
 
         {/* Muted Rose Accent (Right Side) */}
-        <div 
+        <div
           className="absolute top-[20%] -right-1/4 w-[60%] h-[60%] rounded-full opacity-20 blur-[110px]"
           style={{ background: 'radial-gradient(circle, #b66570 0%, transparent 70%)' }}
         />
 
         {/* Dark Purple Depth (Center) */}
-        <div 
+        <div
           className="absolute top-[30%] left-[20%] w-[50%] h-[50%] rounded-full opacity-25 blur-[130px]"
           style={{ background: 'radial-gradient(circle, #2d1f44 0%, transparent 70%)' }}
         />
@@ -78,22 +271,31 @@ export default function Chat() {
         <div className="flex justify-between items-center w-full">
           <div>
             <p className="text-sm font-bold text-[#ed9e6f] tracking-widest uppercase">
-              @moonlitSoul
+              {profile.nickname || "ANONYMOUS"}
             </p>
             <p className="text-[10px] text-white/40 tracking-tighter uppercase">
               ✦ Anonymous Blind Date
             </p>
           </div>
+
+
           <p className="text-xs text-[#b66570] font-mono">
             07:42 LEFT
           </p>
         </div>
       </div>
 
+      {messagesLeft !== null && (
+        <p className="text-[10px] text-white/40 tracking-wide mt-1">
+          ✦ {messagesLeft} messages until older whispers fade…
+        </p>
+      )}
+
+
       {/* 💬 Messages Area */}
       <div className="flex-1 overflow-y-auto px-6 py-8 space-y-6 w-full scrollbar-hide">
         {messages.map((msg) => {
-          const isMine = msg.senderId === currentUserId;
+          const isMine = msg.sender === "me";
 
           return (
             <div
@@ -102,10 +304,9 @@ export default function Chat() {
             >
               <div
                 className={`max-w-[85%] md:max-w-[70%] px-5 py-3 rounded-2xl text-[15px] leading-relaxed shadow-2xl transition-all
-                  ${
-                    isMine
-                      ? "bg-[#ed9e6f] text-[#0c111f] font-medium rounded-tr-none shadow-[#ed9e6f]/10"
-                      : "bg-[#2d1f44]/60 backdrop-blur-lg border border-white/10 text-white rounded-tl-none"
+                  ${isMine
+                    ? "bg-[#ed9e6f] text-[#0c111f] font-medium rounded-tr-none shadow-[#ed9e6f]/10"
+                    : "bg-[#2d1f44]/60 backdrop-blur-lg border border-white/10 text-white rounded-tl-none"
                   }
                 `}
               >
@@ -132,7 +333,20 @@ export default function Chat() {
         <div className="flex gap-2 items-center bg-[#2d1f44]/80 backdrop-blur-2xl border border-white/10 rounded-full p-1.5 shadow-2xl">
           <input
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={(e) => {
+              setInput(e.target.value);
+
+              typingChannelRef.current?.send({
+                type: "broadcast",
+                event: "typing",
+                payload: {
+                  sender_id: user.id,
+                  isTyping: true,
+                },
+              });
+            }}
+
+
             onKeyDown={(e) => e.key === "Enter" && sendMessage()}
             placeholder="Whisper to the stars..."
             className="flex-1 bg-transparent px-5 py-2 text-sm outline-none placeholder:text-white/30"
