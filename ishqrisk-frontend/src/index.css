@@ -773,4 +773,207 @@ h1 {
 .delay-1 { animation-delay: 0.2s; }
 .delay-2 { animation-delay: 0.4s; }
 
-/* Enhanced Background Gradient */
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+.delay-1 { animation-delay: 0.1s; }
+.delay-2 { animation-delay: 0.2s; }
+.delay-3 { animation-delay: 0.3s; }
+.delay-4 { animation-delay: 0.4s; }
+.delay-5 { animation-delay: 0.5s; }
+
+/* Space-Time Warp Overlay */
+.warp-container {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  background: black;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.star-line {
+  position: absolute;
+  width: 2px;
+  height: 200px;
+  background: linear-gradient(to bottom, #f3b6c0, transparent);
+  transform-origin: 50% 0%;
+  animation: warp-lines 0.8s ease-in forwards;
+}
+
+@keyframes warp-lines {
+  0% {
+    transform: rotate(var(--rotation)) translateY(0) scaleY(0.1);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    transform: rotate(var(--rotation)) translateY(-120vh) scaleY(3);
+    opacity: 0;
+  }
+}
+
+/* Ambient Floating Animation */
+@keyframes float-slow {
+  0% { transform: translate(0, 0) rotate(0deg); opacity: 0; }
+  15% { opacity: 0.2; }
+  50% { transform: translate(40px, -60px) rotate(15deg); }
+  85% { opacity: 0.2; }
+  100% { transform: translate(-20px, -120px) rotate(-15deg); opacity: 0; }
+}
+
+.animate-float-slow {
+  animation: float-slow linear infinite;
+  will-change: transform;
+}
+
+/* Section Slide-Up Animations */
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-slide-up { animation: slideUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+.delay-1 { animation-delay: 0.1s; }
+.delay-2 { animation-delay: 0.2s; }
+.delay-3 { animation-delay: 0.3s; }
+.delay-4 { animation-delay: 0.4s; }
+.delay-5 { animation-delay: 0.5s; }
+
+/* --- 1. THE CINEMATIC BACKGROUND --- */
+.bg-basic-gradient {
+  background: radial-gradient(circle at 50% -20%, rgba(216, 167, 177, 0.15), transparent 70%),
+              linear-gradient(180deg, #0b0b0c 0%, #070707 100%);
+  position: fixed;
+  inset: 0;
+  z-index: -10;
+}
+
+/* --- 2. ENTRANCE ANIMATIONS (Staggered) --- */
+@keyframes slideUpFade {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-slide-up {
+  opacity: 0;
+  animation: slideUpFade 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.delay-1 { animation-delay: 0.1s; }
+.delay-2 { animation-delay: 0.2s; }
+.delay-3 { animation-delay: 0.3s; }
+.delay-4 { animation-delay: 0.4s; }
+
+/* --- 3. INPUT & PANEL STYLING (Glassmorphism) --- */
+input {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+input:focus {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border-color: rgba(216, 167, 177, 0.5) !important;
+  box-shadow: 0 0 25px rgba(216, 167, 177, 0.1);
+  transform: translateY(-2px);
+}
+
+/* --- 4. SELECTION BUTTONS (Gender/Year) --- */
+.selection-btn {
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.selection-btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(45deg, transparent, rgba(255,255,255,0.05), transparent);
+  transform: translateX(-100%);
+  transition: 0.6s;
+}
+
+.selection-btn:hover::after {
+  transform: translateX(100%);
+}
+
+/* --- 5. THE PHOTO UPLOAD RING --- */
+.photo-upload-ring {
+  position: relative;
+}
+
+.photo-upload-ring::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 1.5rem; /* Matches your rounded-3xl */
+  background: linear-gradient(45deg, #D8A7B1, transparent, #D8A7B1);
+  opacity: 0;
+  transition: opacity 0.5s;
+  z-index: -1;
+}
+
+.photo-upload-ring:hover::before {
+  opacity: 0.3;
+}
+
+/* --- 6. WARP SPEED TRANSITION (For the next step) --- */
+.warp-container {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  background: black;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.star-line {
+  position: absolute;
+  width: 1px;
+  height: 100px;
+  background: linear-gradient(to bottom, #D8A7B1, transparent);
+  transform-origin: 50% 0%;
+  animation: warp-lines 0.8s ease-in forwards;
+}
+
+@keyframes warp-lines {
+  0% { transform: rotate(var(--rotation)) translateY(0) scaleY(0.1); opacity: 0; }
+  20% { opacity: 1; }
+  100% { transform: rotate(var(--rotation)) translateY(-100vh) scaleY(4); opacity: 0; }
+}
+
+/* --- 7. UTILITIES --- */
+.text-luxury {
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  font-weight: 800;
+  font-size: 0.65rem;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+::selection {
+  background: rgba(216, 167, 177, 0.3);
+  color: white;
+}
