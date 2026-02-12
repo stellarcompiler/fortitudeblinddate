@@ -61,7 +61,7 @@ export default function BasicInfo() {
   const validateForm = () => {
     if (!form.firstName.trim()) return "First name is required";
     if (!form.lastName.trim()) return "Last name is required";
-    if (!form.age || Number(form.age) < 18) return "Age must be 18+";
+    if (!form.age || Number(form.age) < 17) return "Age must be 17+";
     if (!form.gender) return "Please select a gender";
     if (!form.year) return "Please select your year";
     if (!/^\d{10,}$/.test(form.phoneno)) return "Enter a valid phone number";
